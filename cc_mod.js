@@ -42,6 +42,10 @@ var summary_div = "";
     // 4.  Hide 'From Submitter' & 'To Submitter' note buttons
     var hide_button = true;
 
+    console.log('>> COMMENT MOD - [', comment_mod ? 'ON' : 'OFF', '] <<');
+    console.log('>> SUMMARY MOD - [', summary_mod ? 'ON' : 'OFF', '] <<');
+    console.log('>> DISABLE BUTTON MOD - [', hide_button? 'ON' : 'OFF', '] <<');
+
 // --------------------------------------------------
 
 $(document).ready(function(e) {
@@ -194,7 +198,7 @@ function CustomizePage(parent_node){
         messaging_field.css({'background-image':'none', 'background-color':'ghostwhite'});
         
         if(hide_button){
-            console.log('>> DISABLE BUTTON MOD - [', hide_button? 'ON' : 'OFF', '] <<');
+            console.log('>> DISABLE BUTTON MOD <<');
             var btn_FromSubmitter = messaging_field.find("div[id$='CRMS_REQ_WRK_CRMS_REQADDINF1']");
             btn_FromSubmitter.css({'display':'none'});
             var btn_ToSubmitter = messaging_field.find("div[id$='CRMS_REQ_WRK_CRMS_REQADDINF2']");
@@ -208,18 +212,12 @@ function CustomizePage(parent_node){
  * Comment Mod
  */
 function Comment_Mod(parent_node){
-    if(comment_mod){
-        console.log('>> COMMENT MOD - [', comment_mod ? 'ON' : 'OFF', '] <<');
-    }
-    if(summary_mod){
-        console.log('>> SUMMARY MOD - [', summary_mod ? 'ON' : 'OFF', '] <<');
-    }
-
     var comments = parent_node.find("div[id*='CRMS_REQ_WRK_CRMS_HTMLTEXT']");
     //console.log('comments :', comments);
     for(var i = 0; i < comments.length; i++){
         var comment = $(comments[i]);
         if(comment_mod){
+            console.log('>> COMMENT MOD <<');
             var comment_topbar = comment.find('span.comment_topbar');
             //console.log('comment topbar', comment_topbar.length);
             if(!comment_topbar.length){
@@ -250,6 +248,7 @@ function Comment_Mod(parent_node){
 
         // SUMMARY Mod
         if(summary_mod){
+            console.log('>> SUMMARY MOD <<');
             var message = comment.find('span[class*="CRMS_TXT"]');
             var firstline = message.text().split('\n')[0];
             //console.log('[', i, '] :', message.text());
