@@ -1,5 +1,5 @@
 /**
- * ClientCare Mod v0.1
+ * ClientCare Mod v0.2
  *
  * Features :
  *  1.  
@@ -26,21 +26,31 @@ var PageInfo = $('div[id^="pt_pageinfo"]');
 
 var SelectedTab = ""; // default 'Request' tab
 var summary_div = "";
+// --------------------------------------------------
 
-if (window.top === window.self) {
-    //--- Script is on domain_B.com when/if it is the MAIN PAGE.
+$(document).ready(function(e) {
+    //console.log('RootNode =', RootNode);
+    //console.log('PageInfo =', PageInfo);
+});
+
+if (window.top === window.self) { //--- Script is on domain_B.com when/if it is the MAIN PAGE.
+    console.log(">> MAIN PAGE <<");
+
+    // Create MOD nav
+    //CreateMod();
 } // MAIN PAGE
-else {
-    //--- Script is on domain_B.com when/if it is IN AN IFRAME.
+else {                            //--- Script is on domain_B.com when/if it is IN AN IFRAME.
+    console.log(">> IFRAME <<");
 
     // For pages using <iframe>
     var MainDoc = $(document);
     var TargetContent;
 
     // On load of <iframe>
-    $('iframe[name="TargetContent"]').load(function(event){
+    $('iframe[name="TargetContent"]').ready(function(event){
         console.log('>>>>>> TargetContent has (re)loaded');
-        TargetContent = $(this.contentDocument);
+        TargetContent = $(this);
+        console.log('TargetContent :', TargetContent);
         if(!TargetContent.length){
             TargetContent = $('iframe[name="TargetContent"]')[0].contentDocument.document;
         }
@@ -67,38 +77,51 @@ else {
 
 // Mod any email Subject
 $(id_MsgRootNode).ready(function(e){
-    console.log('RootNode:', e.target);
-
     var email_sub = $(e.target).find(id_MsgSubject);
-    console.log(email_sub);
+    //console.log('Email sub :',email_sub);
 });
 
 RootNode.ready(function(e){
-    console.log('>>>>>> RootNode has (re)loaded');
-    console.log('RootNode:', RootNode);
-    Comment_Mod(RootNode);
+    console.log('>>>>>> RootNode has (re)loaded', RootNode);
+    //Comment_Mod(RootNode);
 });
 
 RootNode.on('DOMNodeInserted', '.ps_pagecontainer', function(e){
     if(e.target.className == 'PSPAGECONTAINER'){
         //console.log('CONTAINER, DOMNodeInserted >>', e.target);
-        Comment_Mod(RootNode);
+        //Comment_Mod(RootNode);
     }
 });
 
-// PAGE Content change
-RootNode.on('DOMNodeInserted', '#win0divPAGECONTAINER #win0divPSPAGECONTAINER', function(e){
-    console.log('PAGE CONTAINER, DOMNodeInserted >>', e.target);
-});
-
-// TAB initial load
-PageInfo.ready(function(e){
+// PageInfo Node ready, i.e. TAB loaded
+PageInfo.ready(function(){
     TabLoaded();
-});
+    // Select the node that will be observed for mutations
+    var targetNode = PageInfo[0];
+    if(targetNode != undefined){
+        // Options for the observer (which mutations to observe)
+        var config = { attributes: true };
 
-// TAB switch
-PageInfo.on('load DOMSubtreeModified', '', function(e){
-    TabLoaded();
+        // Callback function to execute when mutations are observed, i.e. on TAB switch
+        var callback = function(mutationsList) {
+            for(var mutation of mutationsList) {
+                if (mutation.type == 'attributes' && mutation.attributeName == 'page') { // 'page' attribute modified
+                    console.log('TAB Switched');
+                    TabLoaded();
+                }else{
+                }
+            }
+        };
+
+        // Create an observer instance linked to the callback function
+        var observer = new MutationObserver(callback);
+
+        // Start observing the target node for configured mutations
+        observer.observe(targetNode, config);
+
+        // Later, you can stop observing
+        //observer.disconnect();
+    }
 });
 
 // ================ Global functions ================
@@ -116,13 +139,14 @@ PageInfo.on('load DOMSubtreeModified', '', function(e){
  * 7. History= CRMS_REQHIST_PG
  */
  function TabLoaded(){
+    console.log("Tab loaded");
     SelectedTab = PageInfo.attr('page');
     CustomizePage(RootNode);
     Comment_Mod(RootNode);
  }
 
 /**--------------------------------------------------
- * Customize page (per indifidual tab)
+ * Customize page (per individual tab)
  */
 function CustomizePage(parent_node){
     console.log('Current TAB >>', SelectedTab);
@@ -142,7 +166,7 @@ function CustomizePage(parent_node){
         btn_FromSubmitter.css({'display':'none'});
         var btn_ToSubmitter = messaging_field.find("div[id$='CRMS_REQ_WRK_CRMS_REQADDINF2']");
         btn_ToSubmitter.css({'display':'none'});
-        console.log(btn_FromSubmitter, btn_ToSubmitter);
+        //console.log('Buttons Hidden :', btn_FromSubmitter, btn_ToSubmitter);
     }
 }
 
@@ -150,38 +174,46 @@ function CustomizePage(parent_node){
  * Comment Mod
  */
 function Comment_Mod(parent_node){
+    console.log('>> COMMENT MOD <<');
     var comments = parent_node.find("div[id*='CRMS_REQ_WRK_CRMS_HTMLTEXT']");
     //console.log('comments :', comments);
     for(var i = 0; i < comments.length; i++){
         var comment = $(comments[i]);
+        var comment_topbar = comment.find('span.comment_topbar');
+        console.log('comment topbar', comment_topbar.length);
+        if(!comment_topbar.length){
+            comment.prepend('<span class="comment_topbar" target="' + comment.attr('id')+ '"></span>');
+            comment_topbar = comment.find('span.comment_topbar');
+        }
+
         if(comment.height() > 100){
+            comment_topbar.html('[+]');
+            comment_topbar.click(function(e2){
+                e2.stopPropagation();
+                var target = $(this).parent();
+                if(target.hasClass('hide_comment')){ // expand comment
+                    target.removeClass('hide_comment');
+                    $(this).html('[-]');
+                }else{                               // collapse comment
+                    target.addClass('hide_comment');
+                    $(this).html('[+]');
+                }
+            });
+
+            // SUMMARY Mod
             var message = comment.find('span[class*="CRMS_TXT"]');
             var firstline = message.text().split('\n')[0];
             //console.log('[', i, '] :', message.text());
             if(firstline.match("##SUMMARY")){
-                summary_div = comments;
-                console.log('Summary_id =', summary_div);
-                textspan.addClass('summary_note');
+                if(summary_div == ''){ // first summary is the latest
+                    summary_div = comment;
+                    console.log('Summary_id =', summary_div);
+                }
+                message.addClass('summary_note');
                 //scrollTo(summary_div);
             }
             comment.addClass('hide_comment');
-            //comment.css({'max-height' : '100px', 'overflow' : 'hidden'});
             comment.css({'font-size' : '9pt'});
-
-            comment.click(function(e2){
-                e2.stopPropagation();
-                //console.log('clicked :', this);
-                var target = $(this);
-                if(target.hasClass('hide_comment')){
-                    target.removeClass('hide_comment');
-                    //target.css({'max-height' : '', 'overflow' : ''});
-                    //console.log('hiding :', target);
-                }else{
-                    target.addClass('hide_comment');
-                    //target.css({'max-height' : '100px', 'overflow' : 'hidden'});
-                    //console.log('showing :', target);
-                }
-            });
             //console.log('comment ['+i+'] :', comment);
         }
     }
@@ -213,3 +245,9 @@ function CreateMod(){
         '<div id="mod_navbar"><a href="#home">Home</a><a id="mod_logo">⌬</a><a href="#news">News</a></div>'
     );
 }
+
+$('#mod_logo').on('click', function(e){
+    alert('>> Welcome to ClientCare MOD <<');
+});
+
+
