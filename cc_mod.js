@@ -89,23 +89,6 @@ else {                            //--- Script is on domain_B.com when/if it is 
             TargetContent = $('iframe[name="TargetContent"]')[0].contentDocument.document;
         }
         console.log('TargetContent:', TargetContent);
-
-        // Mod any email Subject
-        var email_page = TargetContent.find('.PSSRCHTITLE').text();
-        console.log("Email page :", email_page);
-        var email_sub = TargetContent.find('#CRM_MAIL_WRK_EMAIL_SUBJECTTEXT');
-        if(email_page == 'Write to Submitter'){
-            var sub_arr = email_sub.text().split(/ (.*)/);
-            console.log("Split Subject :", sub_arr);
-            email_sub.text("RE: [Request ID: ##" + sub_arr[0] + "##] " + sub_arr[1]);
-            console.log("Email Subject :", email_sub.text());
-        }
-        else if(email_page == 'Send Message To DS People'){
-            sub_arr = email_sub.text().split(/(.*) (.*)/);
-            console.log("Split Subject :", sub_arr);
-            email_sub.text("RE: [Request ID: ##" + sub_arr[2] + "##] " + sub_arr[1]);
-            console.log("Email Subject :", email_sub.text());
-        }
     });
 } // IFRAME
 
@@ -206,6 +189,48 @@ function CustomizePage(parent_node){
             //console.log('Buttons Hidden :', btn_FromSubmitter, btn_ToSubmitter);
         }
     }
+    
+    // For 'Email' tab
+    else if( SelectedTab == "CRMS_REQMSG21_SCP" ){
+        /**--------------------------------------------------
+         * Email Subject Mod
+         */
+        var email_page = TargetContent.find('.PSSRCHTITLE').text();
+        console.log("Email page :", email_page);
+        var email_sub = TargetContent.find('#CRM_MAIL_WRK_EMAIL_SUBJECTTEXT');
+
+        // no need to Mod for emails to submitter
+        /*
+        if( email_page == 'Write to Submitter' ){
+            let sub_arr = email_sub.text().split(/ (.*)/);
+            console.log("Split Subject :", sub_arr);
+            if( sub_arr[0].startsWith('SR') ) {
+                email_sub.text("RE: [Request ID: ##" + sub_arr[0] + "##] " + sub_arr[1]);
+            }
+            else{
+                sub_arr = email_sub.text().split(/(.*) (.*)/);
+                console.log("Split Subject :", sub_arr);
+                if( sub_arr[2].startsWith('SR') ) {
+                    email_sub.text("RE: [Request ID: ##" + sub_arr[2] + "##] " + sub_arr[1]);
+                }
+                else{
+                    console.log('Warning: SR # not found in Email Subject!');
+                }
+            }
+            
+        }*/
+        if( email_page == 'Send Message To DS People' ){
+            let sub_arr = email_sub.text().split(/(.*) (.*)/);
+            console.log("Split Subject :", sub_arr);
+            if( sub_arr[2].startsWith('SR') ) {
+                email_sub.text("RE: [Request ID: ##" + sub_arr[2] + "##] " + sub_arr[1]);
+            }
+            else{
+                console.log('Warning: SR # not found in Email Subject!');
+            }
+        }
+        console.log("Email Subject :", email_sub.text());
+    }
 }
 
 /**--------------------------------------------------
@@ -217,7 +242,7 @@ function Comment_Mod(parent_node){
     for(var i = 0; i < comments.length; i++){
         var comment = $(comments[i]);
         if(comment_mod){
-            console.log('>> COMMENT MOD <<');
+            //console.log('>> COMMENT MOD <<');
             var comment_topbar = comment.find('span.comment_topbar');
             //console.log('comment topbar', comment_topbar.length);
             if(!comment_topbar.length){
